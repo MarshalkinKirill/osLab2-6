@@ -1,13 +1,13 @@
 #!/bin/bash
 
-if [[ -d "/home/neli/restore" ]]
+if [[ -d "/home/PC/restore" ]]
 then
-	rmdir "/home/neli/restore"
+	rmdir "/home/PC/restore"
 fi
-mkdir "/home/neli/restore"
+mkdir "/home/PC/restore"
 
 
-backup_prev=$(ls /home/neli | grep -E "^Backup-" | sort -n | tail -1)
+backup_prev=$(ls /home/PC | grep -E "^Backup-" | sort -n | tail -1)
 
 if [[ -z "$backup_prev" ]]
 then
@@ -15,7 +15,7 @@ then
 	exit 1
 fi
 
-for line in $( ls "/home/neli/$backup_prev" | grep -Ev "\-[0-9]{4}-[0-9]{2}-[0-9]{2}$" )
+for line in $( ls "/home/PC/$backup_prev" | grep -Ev "\-[0-9]{4}-[0-9]{2}-[0-9]{2}$" )
 do
-	cp "/home/neli/$backup_prev/$line" "/home/neli/restore/$line"
+	cp "/home/PC/$backup_prev/$line" "/home/PC/restore/$line"
 done

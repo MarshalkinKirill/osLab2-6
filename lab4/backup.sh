@@ -1,6 +1,6 @@
 #!/bin/bash
 
-home_path="/home/neli"
+home_path="/home/PC"
 
 if [[ ! -d "$home_path/source" ]]
 then
