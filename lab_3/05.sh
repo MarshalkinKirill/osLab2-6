@@ -1,21 +1,18 @@
 #!/bin/bash
-./05.helper& > 05.chan
-while true
+
+while true;
 do
 	read line
-	echo "$line" >> 05.chan
+	echo "$line" > pipe5
 
-	if [[ $line == "QUIT" ]]
-		then	
-			echo "the planned quit"
-			rm 05.chan
-			exit 0
+	if [[ "$line" == "QUIT" ]];
+	then
+		exit 0
 	fi
-	
-	if [[ $line != "+" && $line != "*" && ! $line =~ [0-9]+ ]]
-		then
-			echo "ERROR"
-			rm 05.chan
-			exit 1
-	fi	
+
+	if [[ "$line" != "+" && "$line" != "*" && "$line" != [0-9]* ]];
+	then 
+		echo "Wrong line"
+		exit 1
+	fi
 done

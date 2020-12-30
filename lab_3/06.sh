@@ -1,18 +1,21 @@
 #!/bin/bash
-./06.helper&
-while true
+
+while true;
 do
 	read line
-	case $line in
-	"TERM")
-		kill -SIGTERM $(cat pid)
-		break
-	;;
-	"+")
-		kill -USR1 $(cat pid)
-	;;
-	"*")
-		kill -USR2 $(cat pid)
-	;;
+	case "$line" in
+		"TERM")
+			kill -TERM $1
+			exit 0
+		;;
+		"+")
+			kill -USR1 $1
+		;;
+		"*")
+			kill -USR2 $1
+		;;
+		*)
+			continue
+		;;
 	esac
 done
