@@ -1,4 +1,4 @@
 #!/bin/bash
 
-ps aux | awk '{if ($1 == "PC") print}' | wc -l
-ps aux | awk '{if ($1 == "PC") print $2" : "$11}'
+ps aux | awk '{if ($1 == "User") print}' | wc -l
+ps aux | awk '$1 == "User"' | awk '{print $2, $11}' 

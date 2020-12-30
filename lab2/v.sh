@@ -1,37 +1,26 @@
 #!/bin/bash
 
-if [[ -f v_res.txt ]]
-then
-    rm v_res.txt
-fi
-
-last_ppid=-1
+prev_ppid=0
 art_sum=0
 count=0
-
+m=0
+file_in="iv_res.txt"
 IFS=$'\n'
-for line in $(cat iv_res.txt)
+for line in $file
 do
-    ppid=$(echo "$line" | awk -F" : " '{print $2;}' | awk -F"=" '{print $2;}')
-    art=$(echo "$line" | awk -F" : " '{print $3;}' | awk -F"=" '{print $2;}')
+    ppid=$(awk '{print $2}' <<< $line )                                  
+    art=$(awk '{print $3}' <<< $line )                                   
+    pid=$(awk '{print $1}'<<< $line )
     
-    if [[ "$last_ppid" -ne "$ppid" && "$last_ppid" -ne -1 ]]
+    if [[ "$ppid" -ne "$prev_ppid"]]
     then
         average_art=$(echo "scale=4; $art_sum/$count" | bc)
-        echo "Average_Sleepinng_Children_of_ParentID=$last_ppid is $average_art" >> v_res.txt
+        echo "Average_Sleepinng_Children_of_ParentID=$last_ppid : $average_art" >> v_res.txt
         art_sum=0
         count=0
     fi
-
     echo "$line" >> v_res.txt
-
     last_ppid="$ppid"
     art_sum=$(echo "$art_sum+$art" | bc)
-    count=$(echo "$count + 1" | bc)
+    count=$(($count+1))
 done
-
-if [[ "$last_ppid" -ne -1 ]]
-then
-    average_art=$(echo "scale=4; $art_sum/$count" | bc)
-    echo "Average_Sleepinng_Children_of_ParentID=$ppid is $average_art" >> v_res.txt
-fi

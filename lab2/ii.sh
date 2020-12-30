@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ps ax | awk '{if ($5 ~ "^/sbin/*") print $1}'
+ps ax | awk '{print $11, $2}' | grep '^/sbin' | awk '{print $2}'
