@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ps ax | awk '{print $11, $2}' | grep '^/sbin' | awk '{print $2}'
+ps -eo pid,command | grep -E "/sbin/" > ii.txt
