@@ -1,23 +1,20 @@
 #!/bin/bash
-if [ ! -f iv.txt ]; then
-	touch iv.txt
-fi
-for pid in (ps -Ao | tail -n 2)
+
+for pid in $(ps -Ao pid | tail -n +2);
 do
-path="/proc/"$pid
-if [[ -d $path ]]
-then
-	status=$path"/status"
-	sched=$path"/sched"
-	ppid=$(cat $status| grep "PPid:*" | awk '{ print $2 }')
-	if [[ -z $ppid ]]
+	pth="/proc/"$pid
+	ppid=$(grep -Ehsi "ppid:\s+(.+)" $pth"/status" | grep -o "[0-9]\+")
+	rt=$(grep -Ehsi "se\.sum_exec_runtime(.+):\s+(.+)" $pth/sched | awk '{print $3}')
+	sw=$(grep -Ehsi "nr_switches(.+):\s+(.+)" $pth/sched | awk '{print $3}')
+	if [ -z $ppid ];
 	then
 		ppid=0
 	fi
-	rtime=$(cat $sched|grep "sum_exec_runtime" | awk '{print $3}' )
-	swtc=$(cat $sched| grep "nr_switches" | awk '{print $3}'
-		ART=$(echo "scale=5; $rtime/$swtc" | bc -l)
+	if [ -z $rt ] || [ -z $sw ];
+	then
+		art=0
+	else
+		art=$(echo "scale=2; $rt/$sw" | bc | awk '{printf "%.2f", $0}')
 	fi
-	echo "$pid $ppid $ART"
-fi
-done | sort -nk2 | awk '{print "PID = "$1" : PPID = "$2" : AVGRuntime = "$3}' > iv.txt
+	echo "$pid $ppid $art"
+done | sort -nk2 | awk '{print "ProcessID="$1" : Parent_ProcessID="$2" : Average_Running_Time="$3}' > iv.txt
