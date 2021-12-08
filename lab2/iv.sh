@@ -1,5 +1,8 @@
 #!/bin/bash
-for pid in (ps -A | tail -n 2)
+if [ ! -f iv.txt ]; then
+	touch iv.txt
+fi
+for pid in (ps -Ao | tail -n 2)
 do
 path="/proc/"$pid
 if [[ -d $path ]]
@@ -13,7 +16,8 @@ then
 	fi
 	rtime=$(cat $sched|grep "sum_exec_runtime" | awk '{print $3}' )
 	swtc=$(cat $sched| grep "nr_switches" | awk '{print $3}'
-	ART=$(echo "scale=4; $rtime/$swtc" | bc)
+		ART=$(echo "scale=5; $rtime/$swtc" | bc -l)
+	fi
 	echo "$pid $ppid $ART"
 fi
 done | sort -nk2 | awk '{print "PID = "$1" : PPID = "$2" : AVGRuntime = "$3}' > iv.txt
