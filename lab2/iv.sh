@@ -1,17 +1,19 @@
 #!/bin/bash
-
-for pid in $(ps -aux | awk '{print $2;}')
+for pid in (ps -A | tail -n 2)
 do
-    fs="/proc/"$pid"/status"                                    
-    fsc="/proc/"$pid"/sched"
-	
-    ppid=$(cat "fs" | awk '$1 == "PPid:"' | awk '{print $2}')
-    sum_exec_runtime=$(cat "fsc" | awk '$1 == "se\.sum_exec_runtime"' | '{print $3')
-    nr_switches=$(cat "fsc" | awk '$1 == "nr_switches"' | '{print $3}')
-	if [ -z $sum_exec_runtime ] || [ -z $nr_switches ]                   
-    then                                                                 
-        art=0                                                        
-    else
-		art=$(echo "scale=4; $sum_exec_runtime/$nr_switches" | bc)
+path="/proc/"$pid
+if [[ -d $path ]]
+then
+	status=$path"/status"
+	sched=$path"/sched"
+	ppid=$(cat $status| grep "PPid:*" | awk '{ print $2 }')
+	if [[ -z $ppid ]]
+	then
+		ppid=0
 	fi
-done | sort -nk2 | awk '{print "ProcessID="$1" : ParentProcessID="$2" : AverageRunningTime="$3""}' > iv_res.txt
+	rtime=$(cat $sched|grep "sum_exec_runtime" | awk '{print $3}' )
+	swtc=$(cat $sched| grep "nr_switches" | awk '{print $3}'
+	ART=$(echo "scale=4; $rtime/$swtc" | bc)
+	echo "$pid $ppid $ART"
+fi
+done | sort -nk2 | awk '{print "PID = "$1" : PPID = "$2" : AVGRuntime = "$3}' > task4.txt
