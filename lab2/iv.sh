@@ -16,4 +16,4 @@ then
 	ART=$(echo "scale=4; $rtime/$swtc" | bc)
 	echo "$pid $ppid $ART"
 fi
-done | sort -nk2 | awk '{print "PID = "$1" : PPID = "$2" : AVGRuntime = "$3}' > task4.txt
+done | sort -nk2 | awk '{print "PID = "$1" : PPID = "$2" : AVGRuntime = "$3}' > iv.txt
