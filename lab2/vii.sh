@@ -1,35 +1,34 @@
-#!/bin/bash
-
-for tmp in $(ps -Ao pid,command | tail -n +2 | awk '{print $1":"$2}');
+FindProc(){
+for x in $(ps -eo pid,command| tail -n +2 | awk '{print $1 ":" $2}')
 do
-	pid=$(echo $tmp | awk -F ":" '{print $1}')
-	com=$(echo $tmp | awk -F ":" '{print $2}')
-	pth="/proc/"$pid
-	if [ -f $pth/io ];
+	pid=$(echo $x | awk -F ":" '{print $1}')
+	command=$(echo $x| awk -F ":" '{print $2}')
+	path="/proc/"$pid
+	if [[ -f $path/"io" ]]
 	then
-		byte=$(grep -h "read_bytes:" $pth/io | sed "s/[^0-9]*//")
-		echo "$pid $com $byte"
+		bytes=$(grep -h "read_bytes: " $path"/io" | grep -oE "[0-9]+")
+		echo "$pid $command $bytes"
 	fi
-done | sort -nk1 > _a
+done | sort -nrk3 | head -n 3
+}
+touch file1.txt
+FindProc > file1.txt
 sleep 1m
-for tmp in $(ps -Ao pid,command | tail -n +2 | awk '{print $1":"$2}');
-do
-	pid=$(echo $tmp | awk -F ":" '{print $1}')
-	com=$(echo $tmp | awk -F ":" '{print $2}')
-	pth="/proc/"$pid
-	if [ -f $pth/io ];
-	then
-		byte=$(grep -h "read_bytes:" $pth/io | sed "s/[^0-9]*//")
-		echo "$pid $com $byte"
-	fi
-done | sort -nk1 > _b
-cat _a |
-while read str;
+touch file2.txt
+FindProc > file2.txt
+
+cat file1.txt |
+while read str
 do
 	pid=$(awk '{print $1}' <<< $str)
-	com=$(awk '{print $2}' <<< $str)
-	mem1=$(awk '{print $3}' <<< $str)
-	mem2=$(cat _b | awk -v id="$pid" '{if ($1 == id) print $3}')
-	res=$(echo "$mem2-$mem1" | bc)
-	echo $pid" : "$com" : "$res
-done | sort -t ':' -nrk3 | head -3 > vii.txt
+	command=$(awk '{print $2}' <<< $str)
+	read_bytes=$(awk '{print $3}' <<< $str)
+	
+
+	read_bytes1=$(cat file2.txt |awk -v id=$pid '{if ($1 == id) print $3}')
+	difference=$(($read_bytes1-$read_bytes))
+	echo $pid":"$command":"$difference
+done 
+
+rm file1.txt
+rm file2.txt
