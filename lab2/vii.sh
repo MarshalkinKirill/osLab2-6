@@ -1,35 +1,35 @@
 #!/bin/bash
-
-check()
-{
-    for proc_dir in $(ls -d /proc/[0-9]*)
-    do
-        if [[ -f "$proc_dir"/io && -f "$proc_dir"/status && -f "$proc_dir"/cmdline ]]
-        then
-            rchar=$(cat "$proc_dir"/io | awk -F":" '{print $2}' | tr -d "[\t\s]")
-            pid=$(cat "$proc_dir"/status | awk -F":" '{print $2}' | tr -d "[\t\s]")
-            cmd=$(cat "$proc_dir"/cmdline | tr -d '\0')
-            echo "$pid_$cmd_$rchar " >> "$1".tmp
-        fi
-    done
+FindProc(){
+for x in $(ps -eo pid,command| tail -n +2 | awk '{print $1 ":" $2}')
+do
+	pid=$(echo $x | awk -F ":" '{print $1}')
+	command=$(echo $x| awk -F ":" '{print $2}')
+	path="/proc/"$pid
+	if [[ -f $path/"io" ]]
+	then
+		bytes=$(grep -h "read_bytes: " $path"/io" | grep -oE "[0-9]+")
+		echo "$pid $command $bytes"
+	fi
+done | sort -nrk3 | head -n 3
 }
-
-check start
+touch file1.txt
+FindProc > file1.txt
 sleep 1m
-check end
+touch file2.txt
+FindProc > file2.txt
 
-cat end.tmp |
-while read line 
+cat file1.txt |
+while read str
 do
 	pid=$(awk '{print $1}' <<< $str)
-	cmd=$(awk '{print $2}' <<< $str)
-    mem0=$(awk '{print $3}' <<< $str)
-	mem1=$(cat start.tmp | awk -v id="$pid" '{if ($1 == id) print $3}')
-	deltamem=$(echo "$mem1-$mem0" | bc)
-	echo " $pid_$cmd_$deltamem " >> res.tmp
-done	
-cat res.tmp | sort -n --key=3 --field-separator="_" | tail -n 3 
+	command=$(awk '{print $2}' <<< $str)
+	read_bytes=$(awk '{print $3}' <<< $str)
+	
 
-rm res.tmp
-rm start.tmp
-rm end.tmp
+	read_bytes1=$(cat file2.txt |awk -v id=$pid '{if ($1 == id) print $3}')
+	difference=$(($read_bytes1-$read_bytes))
+	echo $pid":"$command":"$difference
+done 
+
+rm file1.txt
+rm file2.txt
