@@ -1,3 +1,3 @@
 #!/bin/bash
-./handler2.sh&pid=$!
-./generator2.sh $pid
+./6handler.sh&pid=$!
+./6generator.sh $pid
