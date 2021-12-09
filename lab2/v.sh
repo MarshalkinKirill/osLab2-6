@@ -1,10 +1,8 @@
 #!/bin/bash
-
-curppid=0
-avgsum=0
 avg=0
 cnt=1
-
+curppid=0
+avgsum=0
 echo -e "$(<iv.txt)\n" | sed "s/[^0-9.]\+/ /g" | sed "s/^ //g" |
 while read str;
 do
@@ -13,10 +11,10 @@ do
 	art=$(awk '{print $3}' <<< $str)
 	if [[ $ppid == $curppid ]];
 	then
-		avgsum=$(echo "$avgsum+$art" | bc | awk '{printf "%.2f", $0}')
+		avgsum=$(echo "$avgsum+$art" | bc)
 		cnt=$(($cnt+1))
 	else
-		avg=$(echo "scale = 2; $avgsum/$cnt" | bc | awk '{printf "%.2f", $0}')
+		avg=$(echo "scale = 2; $avgsum/$cnt" | bc)
 		echo "Average_Children_Running_Time_Of_PaarentID="$curppid" is "$avg
 		avgsum=$art
 		cnt=1
@@ -24,6 +22,6 @@ do
 	fi
 	if [[ -n $pid ]];
 	then
-		echo "ProcessID="$pid" : Parent_ProcessID="$ppid" : Average_Running_Time="$art
+		echo "ProcessID="$pid" ; Parent_ProcessID="$ppid" ; Average_Running_Time="$art
 	fi
 done > v.txt
