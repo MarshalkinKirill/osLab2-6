@@ -1,19 +1,26 @@
 #!/bin/bash
 
-./04helper.sh &
-pid1=$!
-./04helper.sh &
-pid2=$!
-./04helper.sh &
-pid3=$!
+./task4loop.sh & pid1=$!
+./task4loop.sh & pid2=$!
+./task4loop.sh & pid3=$!
 
-top -b -n 1 | head -10 | tail -4 | awk '{print $1 " " $9}'
+top -b -n 1 | head -10 | tail -3 | awk '{print $1 " " $9}'
 
-renice +10 -p $pid1
+niceness=$(top -b -n 1 | grep "$pid1" | awk '{print $9}')
+cnt=0
+condition=$(echo "$niceness > 10.0" | bc -l)
 
-kill $pid3
+while [ "$condition" -eq 1 ]
+do
+	cnt=$(echo "$cnt+1" | bc)
+	renice +$cnt "$pid1"
+	niceness=$(top -b -n 1 | grep "$pid1" | awk '{print $9}')
+	condition=$(echo "$niceness > 10.0" | bc -l)
+done
 
-top -b -n 1 | head -10 | tail -4 | awk '{print $1 " " $9}'
+kill "$pid3"
 
-kill $pid1
-kill $pid2
+top -b -n 1 | head -10 | tail -3 | awk '{print $1 " " $9}'
+
+kill "$pid1"
+kill "$pid2"
