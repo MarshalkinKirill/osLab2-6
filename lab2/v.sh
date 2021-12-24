@@ -1,27 +1,28 @@
 #!/bin/bash
-avg=0
-cnt=1
-curppid=0
-avgsum=0
-echo -e "$(<iv.txt)\n" | sed "s/[^0-9.]\+/ /g" | sed "s/^ //g" |
-while read str;
+
+current=0
+sum=0
+count=0
+echo "0 0 0" >> iv.txt
+data=$(tr -dc '[:digit:][:space:]\.' < iv.txt)
+echo "$data" | while read line
 do
-	pid=$(awk '{print $1}' <<< $str)
-	ppid=$(awk '{print $2}' <<< $str)
-	art=$(awk '{print $3}' <<< $str)
-	if [[ $ppid == $curppid ]];
-	then
-		avgsum=$(echo "$avgsum+$art" | bc)
-		cnt=$(($cnt+1))
-	else
-		avg=$(echo "scale = 2; $avgsum/$cnt" | bc)
-		echo "Average_Children_Running_Time_Of_PaarentID="$curppid" is "$avg
-		avgsum=$art
-		cnt=1
-		curppid=$ppid
-	fi
-	if [[ -n $pid ]];
-	then
-		echo "ProcessID="$pid" ; Parent_ProcessID="$ppid" ; Average_Running_Time="$art
-	fi
+    pid=$(awk '{print $1}' <<< "$line")
+    ppid=$(awk '{print $2}' <<< "$line")
+    art=$(awk '{print $3}' <<< "$line")
+    let count=$count+1
+    if [[ $current == $ppid ]]
+    then
+	sum=$(echo "$sum+$art" | bc)
+    else
+	avg=$(echo "scale=5; $sum/($count - 1)" | bc)
+	sum=$art
+	count=1
+	echo "Average_Running_Children_of_ParentID="$current" is "$avg""
+	current=$ppid
+    fi
+    if [[ "$pid" == "0" ]]
+    then break
+    fi
+    echo "ProcessID="$pid" : Parent_ProcessID="$ppid" : Average_Running_Time="$art""
 done > v.txt
