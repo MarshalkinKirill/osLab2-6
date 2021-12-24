@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ps -eo pid,command | grep -E "/sbin/" > ii.txt
+ps -Ao pid,args | awk '{if ($2 ~ "^/sbin/") print $1" : "$2}' > ii.txt
