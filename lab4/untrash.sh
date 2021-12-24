@@ -1,78 +1,65 @@
 #!/bin/bash
 
-
-dir="$HOME/.trash"
-dir_log="$HOME/.trash.log"
-if [[ $# -ne 1 ]]
+if [[ "$#" -ne 1 ]]
 then
-	echo "Incorrect number of arguments. Had to be 1."
-	exit 1
+    echo "Incorrect format of arguments"
+    exit 1
 fi
 
-if [[ ! -d $dir ]]
+if [[ ! -f ~/.trash.log ]]
 then
-	echo "$dir: No such directory exists"
-	exit 1
+    echo "Log file not found!"
+    exit 1
 fi
 
-if [[ ! -e $dir_log ]]
+if [[ ! -d ~/.trash ]]
 then
-	echo "File trash.log doesn't exist"
-	exit 1
+    echo "Trash directory not exists"
+    exit 1
 fi
 
-if [[ $(grep -E "$1 " "$dir_log") == "" ]]
-then
-	echo "Can't find $1 in trash.log"
-	exit 1
-fi
-
-if [[ $(grep -E "/$1 " "$dir_log") == "" ]]
-then
-	echo "Type only name of the file, not full path"
-	exit 1
-fi
-
-###########################
-echo "$(grep -E "/$1" $dir_log)"|
-while read line;
+cat ~/.trash.log | while read line
 do
-	file_path=$(echo "$line" | awk '{print $1}')
-	file_reference=$(echo "$line" | awk '{print $2}')
-	read -p "Restore $file_path (y/n)?" answer <&1
-    
-	case $answer in
-		"" | "Y" | "y")
-			way=$(echo "$file_path" | awk -F"/$1" '{print $1}')
-			if [[ ! -d $way ]]
-			then
-				echo "Directory $way doesn't exist anymore, file will be restored in $HOME"
-				if [[ -f $file_path ]]
-				then
-					read -p "File $file_path exists in directory, choose different name: " new_name <&1
-					ln "$file_reference" "$HOME/$new_name"
-					rm "$file_reference"
-				else
-					ln "$file_reference" "$HOME/$1"
-					rm "$file_reference"
-				fi
-			else
-				if [[ -f $file_path ]]
-				then
-					read -p "File $file_path exists in directory, choose different name: " new_name <&1
-					ln "$file_reference" "$way/$new_name"
-					rm "$file_reference"
-				else
-					ln "$file_reference" "$way/$1"
-					rm "$file_reference"
-				fi
-			fi
-				grep -Ev  "$file_reference$" "$dir_log" > .untrash_tmp.log
-				cat .untrash_tmp.log > "$dir_log"
-				rm .untrash_tmp.log
-			;;
-		*)
-			continue
-			;;
-	esac
+    link=$(echo $line | awk '{print $NF}')
+    fullname=$(echo $line | awk '{$(NF--)=""; print}')
+    fullname="${fullname%?}"
+    filename=$(basename "$fullname")
+    filepath=$(dirname "$fullname")
+    if [[ $filename == $1 ]]
+    then
+	echo $fullname
+	read -p "You want to untrash this file? [y/n]: " answer < /dev/tty
+	case "$answer" in
+	"y")
+	    newfilename="$fullname"
+	    while [[ -e "$newfilename" ]]
+	    do
+		echo "File $newfilename already exisits"
+		read -p "Change file name: " answer < /dev/tty
+		newfilename="$filepath/$answer"
+	    done
+
+	    if ln ~/.trash/$link "$newfilename" 2> /dev/null
+	    then
+		echo "Successfully untrashed!"
+            else
+		echo "Directory to untrash not found! Restoring to $HOME"
+		newfilename="$HOME/$filename"
+		while [[ -e "$newfilename" ]]
+		do
+		    echo "File $newfilename already exists"
+		    read -p "Change file name: " answer < /dev/tty
+		    newfilename="$HOME/$answer"
+		done
+		ln ~/.trash/$link "$newfilename"
+		echo "Successfully untrashed!"
+	    fi
+	    rm ~/.trash/$link
+	    grep -v "$line" ~/.trash.log > .tmp.log ; mv .tmp.log ~/.trash.log
+	;;
+        *)
+	    continue
+	;;
+        esac
+    fi
 done
