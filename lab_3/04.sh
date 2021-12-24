@@ -1,8 +1,8 @@
 #!/bin/bash
 
-./task4loop.sh & pid1=$!
-./task4loop.sh & pid2=$!
-./task4loop.sh & pid3=$!
+./04helper.sh & pid1=$!
+./04helper.sh & pid2=$!
+./04helper.sh & pid3=$!
 
 top -b -n 1 | head -10 | tail -3 | awk '{print $1 " " $9}'
 
