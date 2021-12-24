@@ -1,40 +1,35 @@
 #!/bin/bash
 
-if [[ ! -e "$PWD/.rmtrash.log" ]]
+if [[ "$#" -ne 1 ]]
 then
-	echo 1 > "$PWD/.rmtrash.log"
+    echo "Incorrect format of argumnets"
+    exit 1
 fi
 
-if [[ $# -gt 1 ]]
+if [[ ! -f "$(pwd)/$1" ]]
 then
-	echo "Incorrect number of arguments. Had to be 1."
-	exit 1
+    echo "File $1 doesn't exist!"
+    exit 1
 fi
 
-
-if [[ ! -f $1 ]]
+if [[ ! -d ~/.trash ]]
 then
-	echo "$1: No such file exists"
-	exit 1
+    mkdir ~/.trash
 fi
 
-
-dir="$HOME/.trash"
-dir_log="$HOME/.trash.log"
-if [[ ! -d $dir ]]
+if [[ ! -f "~/.trash.log" ]]
 then
-	mkdir "$dir"
+    touch ~/.trash.log
 fi
 
+linkname=$(ls ~/.trash | cat | grep "^[[:digit:]]\+$" | sort -nrk 1 | head -1)
+if [[ -z "$filename" ]]
+then
+    linkname=0
+fi
 
-numberOfLinks=$(cat "$PWD/.rmtrash.log")
-ln "$PWD/$1" "$dir/$numberOfLinks"
-tmp="$PWD/$1"
-tmp_ln="$dir/$numberOfLinks"
-touch "$tmp_ln"
-(( numberOfLinks=numberOfLinks+1 ))
-echo "$numberOfLinks" > "$PWD/.rmtrash.log"
-rm "$tmp"
+let linkname=linkname\+1
+ln $(pwd)/"$1" ~/.trash/$linkname
 
-
-echo "$tmp $tmp_ln" >> "$dir_log"
+rm "$(pwd)/$1"
+echo "$(pwd)/$1 $linkname" >> ~/.trash.log
