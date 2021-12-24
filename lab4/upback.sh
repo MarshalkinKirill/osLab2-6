@@ -1,21 +1,30 @@
 #!/bin/bash
 
-if [[ -d "/home/PC/restore" ]]
+home="/home/user"
+lastBackup=$(ls $home | grep -E "^Backup" | sort -n | tail -1)
+
+if [[ -z "$lastBackup" ]]
 then
-	rmdir "/home/PC/restore"
-fi
-mkdir "/home/PC/restore"
-
-
-backup_prev=$(ls /home/PC | grep -E "^Backup-" | sort -n | tail -1)
-
-if [[ -z "$backup_prev" ]]
-then
-	echo "There is no files to restore"
+	echo "There are no backups in $home"
 	exit 1
 fi
 
-for line in $( ls "/home/PC/$backup_prev" | grep -Ev "\-[0-9]{4}-[0-9]{2}-[0-9]{2}$" )
+lastBackupPath="$home/$lastBackup"
+
+if [[ -e $home/restore ]]
+then
+	rm -rf $home/restore
+fi
+
+mkdir $home/restore
+
+find "$lastBackupPath" -type f -print0 | while read -d $'\0' filePath
 do
-	cp "/home/PC/$backup_prev/$line" "/home/PC/restore/$line"
+	file=$(echo "$filePath" | awk 'BEGIN{FS="/"}; {print $NF}')
+	if [[ $file =~ "*[0-9]{4}-[0-9]{2}-[0-9]{2}$" ]]
+	then continue
+	fi
+
+	cp "$lastBackupPath/$file" "$home/restore/$file"
+	echo "Successfully copied $file"
 done
