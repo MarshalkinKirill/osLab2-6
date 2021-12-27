@@ -1,65 +1,62 @@
 #!/bin/bash
 
-if [[ "$#" -ne 1 ]]
+if [[ $# != 1 ]]
 then
-    echo "Incorrect format of arguments"
+	echo "Invalid amount of arguments"
+	exit 1
+fi
+
+home="/home/user"
+trash="$home/.trash"
+trashLog="$home/.trash.log"
+
+if [[ ! -d $trash ]]
+then
+    echo "Directory does not exist"
     exit 1
 fi
 
-if [[ ! -f ~/.trash.log ]]
+if [[ ! -f $trashLog ]]
 then
-    echo "Log file not found!"
+    echo "Log file does not exist"
     exit 1
 fi
 
-if [[ ! -d ~/.trash ]]
-then
-    echo "Trash directory not exists"
-    exit 1
-fi
-
-cat ~/.trash.log | while read line
+while read -r -u9 line
 do
-    link=$(echo $line | awk '{print $NF}')
-    fullname=$(echo $line | awk '{$(NF--)=""; print}')
-    fullname="${fullname%?}"
-    filename=$(basename "$fullname")
-    filepath=$(dirname "$fullname")
-    if [[ $filename == $1 ]]
-    then
-	echo $fullname
-	read -p "You want to untrash this file? [y/n]: " answer < /dev/tty
-	case "$answer" in
-	"y")
-	    newfilename="$fullname"
-	    while [[ -e "$newfilename" ]]
-	    do
-		echo "File $newfilename already exisits"
-		read -p "Change file name: " answer < /dev/tty
-		newfilename="$filepath/$answer"
-	    done
+	oldFilePath=$(echo $line | awk 'BEGIN{FS="|"}; {print $1}')
+	newFilePath=$(echo $line | awk 'BEGIN{FS="|"}; {print $4}')
+	read -p "${oldFilePath} Do you want to restore this file? [y/N] " answer
+	if [[ $answer != "y" ]]
+	then
+		continue
+	fi
+	
+	restoreDirectory=$(echo $oldFilePath | awk 'BEGIN{FS=OFS="/"}; {$NF=""; print $0}')
+	fileName=$(echo $oldFilePath | awk 'BEGIN{FS="/"}; {print $NF}')
 
-	    if ln ~/.trash/$link "$newfilename" 2> /dev/null
-	    then
-		echo "Successfully untrashed!"
-            else
-		echo "Directory to untrash not found! Restoring to $HOME"
-		newfilename="$HOME/$filename"
-		while [[ -e "$newfilename" ]]
-		do
-		    echo "File $newfilename already exists"
-		    read -p "Change file name: " answer < /dev/tty
-		    newfilename="$HOME/$answer"
-		done
-		ln ~/.trash/$link "$newfilename"
-		echo "Successfully untrashed!"
-	    fi
-	    rm ~/.trash/$link
-	    grep -v "$line" ~/.trash.log > .tmp.log ; mv .tmp.log ~/.trash.log
-	;;
-        *)
-	    continue
-	;;
-        esac
-    fi
-done
+	if [[ -d $restoreDirectory ]]
+	then
+		if [[ -f "$oldFilePath" ]] || [[ -d "$oldFilePath" ]]
+		then
+			read -p "File or directory with name $fileName already exists, enter new name: " newName
+			ln "$newFilePath" "$restoreDirectory/$newName"
+		else
+			ln "$newFilePath" "$oldFilePath"
+		fi
+		rm "$newFilePath"
+	else
+		echo "Directory $restoreDirectory does not exist, $fileName will be restored in $home"
+		if [[ -f "$home/$fileName" ]]
+		then
+			read -p "File with name $fileName already exists, enter new name: " newName
+			ln "$newFilePath" "$home/$newName"
+		else
+			ln "$newFilePath" "$home/$fileName"
+		fi
+		rm "$newFilePath"
+	fi
+
+	sed -ie "s~.*$newFilePath.*~~" $trashLog
+	sed -i "/^$/d" $trashLog
+done 9< $trashLog
