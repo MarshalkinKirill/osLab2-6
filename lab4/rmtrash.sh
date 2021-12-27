@@ -1,35 +1,32 @@
 #!/bin/bash
 
-if [[ "$#" -ne 1 ]]
+if [[ $# != 1 ]]
 then
-    echo "Incorrect format of argumnets"
+	echo "Invalid amount of arguments"
+	exit 1
+fi
+
+if [[ ! -f $1 ]]
+then
+    echo "File does no exist"
     exit 1
 fi
 
-if [[ ! -f "$(pwd)/$1" ]]
+if [[ ! -e "/home/user/.trash" ]]
 then
-    echo "File $1 doesn't exist!"
-    exit 1
+    mkdir /home/user/.trash
 fi
 
-if [[ ! -d ~/.trash ]]
+filecounter=$(find "/home/user/.trash" -type f -name "[0-9]*" | grep -o -E "[0-9]+" | sort -n | tail -1)
+if [ -z $filecounter ];
 then
-    mkdir ~/.trash
+    number=1
+else
+    number=$(echo "$filecounter+1" | bc)
 fi
 
-if [[ ! -f "~/.trash.log" ]]
-then
-    touch ~/.trash.log
-fi
+fileLink="$(readlink -f "./$1")"
 
-linkname=$(ls ~/.trash | cat | grep "^[[:digit:]]\+$" | sort -nrk 1 | head -1)
-if [[ -z "$filename" ]]
-then
-    linkname=0
-fi
-
-let linkname=linkname\+1
-ln $(pwd)/"$1" ~/.trash/$linkname
-
-rm "$(pwd)/$1"
-echo "$(pwd)/$1 $linkname" >> ~/.trash.log
+ln "$fileLink" "/home/user/.trash/$number"
+echo "$fileLink|now|is|/home/user/.trash/$number" >> /home/user/.trash.log
+rm "./$1"
